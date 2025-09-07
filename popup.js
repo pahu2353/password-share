@@ -40,7 +40,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let connectionRole = null; // 'sender' or 'receiver'
   let encodedOffer = null;
   let connectionStartTime = 0;
-
   
   // Create a WebRTC configuration with Google's STUN server
   const rtcConfig = {
@@ -50,15 +49,26 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   
   // Helper functions for WebRTC
-  const encodeOffer = (offer) => {
-    return btoa(JSON.stringify(offer));
+  const encodeSessionDescription = (sessionDescription, type) => {
+    const data = {
+      type: type || sessionDescription.type,
+      sdp: sessionDescription.sdp,
+      timestamp: Date.now()
+    };
+    console.log(`Encoding ${data.type}:`, data);
+    return btoa(JSON.stringify(data));
   };
 
-  const decodeOffer = (encodedOffer) => {
+  const decodeSessionDescription = (encoded) => {
     try {
-      return JSON.parse(atob(encodedOffer));
+      const data = JSON.parse(atob(encoded));
+      console.log('Decoded session description:', data);
+      return {
+        type: data.type,
+        sdp: data.sdp
+      };
     } catch (e) {
-      console.error('Error decoding offer:', e);
+      console.error('Error decoding session description:', e);
       return null;
     }
   };
@@ -369,8 +379,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
       
-      // Encode the offer for sharing
-      encodedOffer = encodeOffer(pc.localDescription);
+      // Encode the offer for sharing (this is the SENDER'S code)
+      encodedOffer = encodeSessionDescription(pc.localDescription, 'offer');
       
       // Save connection info to background
       await chrome.runtime.sendMessage({
@@ -383,16 +393,16 @@ document.addEventListener('DOMContentLoaded', () => {
       connectionCode.value = encodedOffer;
       codeContainer.classList.remove('hidden');
       
-      showStatus(codeStatus, 'Connection code generated! Share it with the receiver and wait for their answer code.', 'success');
-      showStatus(sendStatus, 'Waiting for receiver to provide answer code...', '');
+      showStatus(codeStatus, 'SENDER CODE generated! Share this with the receiver.', 'success');
+      showStatus(sendStatus, 'Waiting for receiver to provide their ANSWER code...', '');
       
       // Add answer code input
       const answerContainer = document.createElement('div');
       answerContainer.className = 'input-group';
       answerContainer.innerHTML = `
-        <label>Enter answer code from receiver:</label>
-        <textarea id="answerCodeInput" placeholder="Paste receiver's answer code here..."></textarea>
-        <button id="processAnswer">Process Answer</button>
+        <label><strong>Step 3:</strong> Enter ANSWER code from receiver:</label>
+        <textarea id="answerCodeInput" placeholder="The receiver will generate an ANSWER code - paste it here..."></textarea>
+        <button id="processAnswer">Process Answer Code</button>
       `;
       
       // Insert after the copy code button
@@ -407,13 +417,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         try {
-          showStatus(codeStatus, 'Processing answer...', '');
+          showStatus(codeStatus, 'Processing ANSWER code...', '');
           
           // Decode the answer
-          const answer = decodeOffer(answerCode);
-          if (!answer) {
-            throw new Error('Invalid answer code format');
+          const answer = decodeSessionDescription(answerCode);
+          if (!answer || answer.type !== 'answer') {
+            throw new Error('Invalid answer code format - must be an ANSWER, not an offer');
           }
+          
+          console.log('Processing answer from receiver:', answer);
           
           // Set remote description (answer)
           await pc.setRemoteDescription(new RTCSessionDescription(answer));
@@ -538,13 +550,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      showStatus(receiverCodeStatus, 'Establishing connection...', '');
+      showStatus(receiverCodeStatus, 'Processing SENDER code and generating ANSWER...', '');
       
-      // Decode the offer
-      const offer = decodeOffer(code);
-      if (!offer) {
-        throw new Error('Invalid connection code format');
+      // Decode the offer from sender
+      const offer = decodeSessionDescription(code);
+      if (!offer || offer.type !== 'offer') {
+        throw new Error('Invalid sender code format - must be an OFFER from sender');
       }
+      
+      console.log('Processing offer from sender:', offer);
       
       // Initialize peer connection as receiver
       connectionStartTime = Date.now();
@@ -580,8 +594,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
       
-      // Encode the answer and display it for manual exchange
-      const encodedAnswer = encodeOffer(pc.localDescription);
+      // Encode the answer (this is the RECEIVER'S answer code)
+      const encodedAnswer = encodeSessionDescription(pc.localDescription, 'answer');
       
       // Save connection info to background
       await chrome.runtime.sendMessage({
@@ -592,15 +606,18 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       
       // Show the answer code that needs to be sent back to sender
-      showStatus(receiverCodeStatus, 'Connection answer generated! Share this code with the sender:', 'success');
+      showStatus(receiverCodeStatus, 'ANSWER CODE generated! Send this back to the sender:', 'success');
       
       // Create answer display
       const answerContainer = document.createElement('div');
       answerContainer.className = 'input-group';
       answerContainer.innerHTML = `
-        <label>Share this answer code with the sender:</label>
+        <label><strong>Step 3:</strong> Send this ANSWER code to the sender:</label>
         <textarea readonly>${encodedAnswer}</textarea>
-        <button onclick="navigator.clipboard.writeText('${encodedAnswer}'); this.textContent='Copied!';">Copy Answer Code</button>
+        <button onclick="navigator.clipboard.writeText('${encodedAnswer}'); this.textContent='Copied!'; setTimeout(() => this.textContent='Copy Answer Code', 2000);">Copy Answer Code</button>
+        <div style="font-size: 12px; color: #666; margin-top: 8px;">
+          The sender needs to paste this ANSWER code to complete the connection.
+        </div>
       `;
       
       // Insert after the connect button

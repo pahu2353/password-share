@@ -116,18 +116,18 @@
     <!-- Sender Interface -->
     <div id="senderInterface">
       <div class="section">
-        <div class="section-title">Step 1: Generate Connection Code</div>
-        <button id="generateCode">Generate Code</button>
+        <div class="section-title">Step 1: Generate SENDER Code</div>
+        <button id="generateCode">Generate Sender Code</button>
         <div class="input-group hidden" id="codeContainer">
-          <label for="connectionCode">Share this code with the receiver:</label>
+          <label for="connectionCode">Send this SENDER code to the receiver:</label>
           <textarea id="connectionCode" readonly></textarea>
-          <button id="copyCode">Copy Code</button>
+          <button id="copyCode">Copy Sender Code</button>
         </div>
         <div id="codeStatus" class="status"></div>
       </div>
 
       <div class="section">
-        <div class="section-title">Step 2: Send Password</div>
+        <div class="section-title">Step 3: Send Password</div>
         <div class="input-group">
           <label for="passwordInput">Enter Google Password:</label>
           <input type="password" id="passwordInput" placeholder="Enter your Google password" disabled>
@@ -140,17 +140,17 @@
     <!-- Receiver Interface -->
     <div id="receiverInterface" class="hidden">
       <div class="section">
-        <div class="section-title">Step 1: Enter Connection Code</div>
+        <div class="section-title">Step 2: Enter SENDER Code</div>
         <div class="input-group">
-          <label for="receiverCodeInput">Paste code from sender:</label>
-          <textarea id="receiverCodeInput" placeholder="Paste connection code here..."></textarea>
+          <label for="receiverCodeInput">Paste SENDER code here:</label>
+          <textarea id="receiverCodeInput" placeholder="Paste the sender's code here..."></textarea>
         </div>
-        <button id="connectWithCode">Connect</button>
+        <button id="connectWithCode">Generate Answer Code</button>
         <div id="receiverCodeStatus" class="status"></div>
       </div>
 
       <div class="section">
-        <div class="section-title">Step 2: Fill Password on Google Login</div>
+        <div class="section-title">Step 4: Fill Password on Google Login</div>
         <div id="connectionStatus" class="status">Not connected</div>
         <button id="fillPassword" disabled>Fill Password</button>
         <div id="fillStatus" class="status"></div>
