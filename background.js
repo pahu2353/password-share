@@ -96,19 +96,50 @@ async function handleFillPassword(sendResponse) {
     }
     
     // Use the active tab or the first Google login tab
-    const tabId = activeTabId || tabs[0].id;
+    const targetTab = tabs.find(tab => tab.active) || tabs[0];
     
-    // Send message to content script to fill the password
-    const response = await chrome.tabs.sendMessage(tabId, {
-      action: 'fillPassword',
-      password: receivedPassword
-    });
-    
-    if (response.error) {
-      throw new Error(response.error);
+    try {
+      // Send message to content script to fill the password
+      const response = await chrome.tabs.sendMessage(targetTab.id, {
+        action: 'fillPassword',
+        password: receivedPassword
+      });
+      
+      if (response && response.error) {
+        throw new Error(response.error);
+      }
+      
+      sendResponse({ success: true });
+    } catch (error) {
+      // If content script is not ready, try to inject it
+      console.log('Content script not ready, attempting to inject...');
+      
+      try {
+        // Inject the content script
+        await chrome.scripting.executeScript({
+          target: { tabId: targetTab.id },
+          files: ['content.js']
+        });
+        
+        // Wait a bit for the script to load
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Try sending the message again
+        const response = await chrome.tabs.sendMessage(targetTab.id, {
+          action: 'fillPassword',
+          password: receivedPassword
+        });
+        
+        if (response && response.error) {
+          throw new Error(response.error);
+        }
+        
+        sendResponse({ success: true });
+      } catch (injectionError) {
+        console.error('Failed to inject content script:', injectionError);
+        throw new Error('Could not communicate with the Google login page. Please refresh the page and try again.');
+      }
     }
-    
-    sendResponse({ success: true });
   } catch (error) {
     console.error('Error filling password:', error);
     sendResponse({ error: error.message });

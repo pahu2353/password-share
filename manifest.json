@@ -3,7 +3,7 @@
   "name": "P2P Google Password Sharing",
   "version": "1.0",
   "description": "Securely share Google credentials over WebRTC without exposing raw passwords",
-  "permissions": ["storage", "tabs"],
+  "permissions": ["storage", "tabs", "scripting"],
   "host_permissions": ["*://accounts.google.com/*"],
   "action": {
     "default_popup": "popup.html",

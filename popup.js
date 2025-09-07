@@ -24,12 +24,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const receiverCodeInput = document.getElementById('receiverCodeInput');
   const connectWithCodeBtn = document.getElementById('connectWithCode');
   const receiverCodeStatus = document.getElementById('receiverCodeStatus');
-  // PIN elements commented out for debugging
-  // const generatePinBtn = document.getElementById('generatePin');
-  // const pinContainer = document.getElementById('pinContainer');
-  // const generatedPin = document.getElementById('generatedPin');
-  // const copyPinBtn = document.getElementById('copyPin');
-  // const pinGenerationStatus = document.getElementById('pinGenerationStatus');
+  // PIN elements commented out for debugging - create dummy elements to prevent errors
+  const generatePinBtn = { disabled: false, addEventListener: () => {} };
+  const pinContainer = { classList: { add: () => {}, remove: () => {} } };
+  const generatedPin = { value: '' };
+  const copyPinBtn = { addEventListener: () => {} };
+  const pinGenerationStatus = { textContent: '', classList: { add: () => {}, remove: () => {} } };
   const connectionStatus = document.getElementById('connectionStatus');
   const fillPasswordBtn = document.getElementById('fillPassword');
   const fillStatus = document.getElementById('fillStatus');
@@ -739,7 +739,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Show reconnect button after 15 seconds if still no working data channel
     if (elapsedTime > 15000 && (!dataChannel || dataChannel.readyState !== 'open')) {
       showStatus(receiverCodeStatus, 'Data channel connection failed. Please try reconnecting.', 'error');
-      document.getElementById('reconnectBtn').classList.remove('hidden');
+      const reconnectBtn = document.getElementById('reconnectBtn');
+      if (reconnectBtn) {
+        reconnectBtn.classList.remove('hidden');
+      }
       return;
     }
     
@@ -792,7 +795,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Add event listener for reconnect button
   document.getElementById('reconnectBtn').addEventListener('click', async () => {
     console.log('Reconnecting...');
-    showStatus(pinGenerationStatus, 'Reconnecting...', '');
+    showStatus(connectionStatus, 'Reconnecting...', '');
     
     // Clean up existing connection
     if (peerConnection) {
@@ -806,13 +809,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Reset UI
     document.getElementById('reconnectBtn').classList.add('hidden');
-    generatePinBtn.disabled = false;
-    pinContainer.classList.add('hidden');
+    // Since PIN elements are commented out, just reset the basic elements
     connectionStatus.textContent = 'Not connected';
     fillPasswordBtn.disabled = true;
     
     // Clear previous status
-    showStatus(pinGenerationStatus, 'Connection reset. You can generate a new PIN now.', '');
+    showStatus(connectionStatus, 'Connection reset. You can try connecting again.', '');
   });
 
   // Fill password on Google login page
@@ -858,14 +860,13 @@ document.addEventListener('DOMContentLoaded', () => {
           // Restore sender state
           codeContainer.classList.remove('hidden');
           connectionCode.value = response.encodedOffer;
-          pinInput.disabled = false;
-          verifyPinBtn.disabled = false;
+          // PIN elements are disabled for debugging
           
-          if (response.pinVerified) {
-            showStatus(pinStatus, 'PIN verified successfully!', 'success');
-            passwordInput.disabled = false;
-            sendPasswordBtn.disabled = false;
-          }
+          // if (response.pinVerified) {
+          //   showStatus(pinStatus, 'PIN verified successfully!', 'success');
+          //   passwordInput.disabled = false;
+          //   sendPasswordBtn.disabled = false;
+          // }
         }
       } else {
         receiverTab.click();
@@ -873,12 +874,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (response.encodedOffer) {
           // Restore receiver state
           showStatus(connectionStatus, 'Connected', 'success');
-          generatePinBtn.disabled = false;
+          // PIN elements are disabled for debugging
           
-          if (response.pin) {
-            pinContainer.classList.remove('hidden');
-            generatedPin.value = response.pin;
-          }
+          // if (response.pin) {
+          //   pinContainer.classList.remove('hidden');
+          //   generatedPin.value = response.pin;
+          // }
           
           if (response.passwordReceived) {
             showStatus(connectionStatus, 'Password received! Ready to fill.', 'success');
